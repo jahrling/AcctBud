@@ -1,16 +1,10 @@
 # AcctBud — Caddy reverse proxy
 #
-# HTTPS is mandatory: iOS service workers and Web Push require a secure context.
-#
-# Cert options (pick one):
-#   1. Tailscale cert: run `tailscale cert acctbud.your-tailnet.ts.net` and
-#      point tls directives at the generated .crt/.key files.
-#   2. DNS-challenge: use a Caddy DNS plugin (e.g. cloudflare) for a domain
-#      you own, with TLS automated via ACME DNS-01.
-#
-# The placeholder below uses option 1 — adjust the hostname and cert paths.
+# Tailscale Serve handles HTTPS termination (valid certs, port 443) and
+# forwards to Caddy on port 8080. Caddy runs plain HTTP — it only needs
+# to route requests and serve the PWA static files.
 
-{$SITE_ADDRESS:acctbud.tail-scale.ts.net} {
+:8080 {
     # Serve the built PWA as static files
     root * /srv/pwa
     file_server

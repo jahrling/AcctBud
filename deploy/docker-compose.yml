@@ -13,8 +13,7 @@ services:
   caddy:
     image: caddy:2-alpine
     ports:
-      - "443:443"
-      - "80:80"
+      - "8081:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ../pwa/dist:/srv/pwa:ro
@@ -24,23 +23,11 @@ services:
       - backend
     restart: unless-stopped
 
-  ollama:
-    image: ollama/ollama:latest
-    volumes:
-      - ollama-models:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    ports:
-      - "11434:11434"
-    restart: unless-stopped
+  # Ollama: use the host-installed instance (already running on port 11434).
+  # The backend container reaches it via host.docker.internal or
+  # extra_hosts when LLM integration arrives in bite 4.
 
 volumes:
   db-data:
   caddy-data:
   caddy-config:
-  ollama-models:

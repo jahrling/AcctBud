@@ -39,6 +39,9 @@ export function usePush() {
   const subscribe = useCallback(async () => {
     try {
       const vapidKey = await getVapidPublicKey();
+      if (!vapidKey) {
+        throw new Error("Server returned no VAPID key — check backend config");
+      }
       const reg = await navigator.serviceWorker.ready;
 
       const permission = await Notification.requestPermission();
@@ -49,7 +52,7 @@ export function usePush() {
 
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
       await registerSubscription(sub);
