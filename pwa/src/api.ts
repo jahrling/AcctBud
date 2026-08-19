@@ -87,3 +87,50 @@ export async function updateTask(
   if (!res.ok) throw new Error("Failed to update task");
   return res.json();
 }
+
+// Check-ins
+
+export interface CheckInItem {
+  id: number;
+  task_id: number;
+  task_title: string;
+  task_category: string;
+  done: boolean;
+}
+
+export interface CheckIn {
+  id: number;
+  for_date: string;
+  created_at: string;
+  notified_at: string | null;
+  completed_at: string | null;
+  status: "pending" | "completed" | "missed";
+  note: string | null;
+  items: CheckInItem[];
+}
+
+export async function getTodayCheckIn(): Promise<CheckIn> {
+  const res = await fetch(`${BASE}/api/checkins/today`);
+  if (!res.ok) throw new Error("Failed to fetch today's check-in");
+  return res.json();
+}
+
+export async function completeCheckIn(
+  id: number,
+  doneTaskIds: number[],
+  note?: string,
+): Promise<CheckIn> {
+  const res = await fetch(`${BASE}/api/checkins/${id}/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ done_task_ids: doneTaskIds, note: note ?? null }),
+  });
+  if (!res.ok) throw new Error("Failed to complete check-in");
+  return res.json();
+}
+
+export async function getCheckIns(limit = 30): Promise<{ checkins: CheckIn[] }> {
+  const res = await fetch(`${BASE}/api/checkins?limit=${limit}`);
+  if (!res.ok) throw new Error("Failed to fetch check-ins");
+  return res.json();
+}

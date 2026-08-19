@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
@@ -33,6 +33,37 @@ class Task(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
+
+
+class CheckIn(Base):
+    __tablename__ = "check_in"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    for_date: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    followup_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    journal_written: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    items: Mapped[list["CheckInItem"]] = relationship(
+        back_populates="check_in", cascade="all, delete-orphan"
+    )
+
+
+class CheckInItem(Base):
+    __tablename__ = "check_in_item"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    check_in_id: Mapped[int] = mapped_column(Integer, ForeignKey("check_in.id"), nullable=False)
+    task_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    task_title: Mapped[str] = mapped_column(String, nullable=False)
+    task_category: Mapped[str] = mapped_column(String, nullable=False)
+    done: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    check_in: Mapped["CheckIn"] = relationship(back_populates="items")
 
 
 class NotificationLog(Base):

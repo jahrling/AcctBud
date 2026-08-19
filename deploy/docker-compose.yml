@@ -6,6 +6,8 @@ services:
     env_file: .env
     volumes:
       - db-data:/app/data
+      # Uncomment to mount The Vault journal directory (must match JOURNAL_PATH in .env):
+      # - /mnt/vault/acctbud/journal:/mnt/vault/acctbud/journal
     expose:
       - "8000"
     restart: unless-stopped

@@ -70,3 +70,38 @@ class NotificationLogResponse(BaseModel):
     result: str
 
     model_config = {"from_attributes": True}
+
+
+# Check-ins
+
+
+class CheckInItemResponse(BaseModel):
+    id: int
+    task_id: int
+    task_title: str
+    task_category: str
+    done: bool
+
+    model_config = {"from_attributes": True}
+
+
+class CheckInResponse(BaseModel):
+    id: int
+    for_date: str
+    created_at: datetime
+    notified_at: datetime | None
+    completed_at: datetime | None
+    status: str
+    note: str | None
+    items: list[CheckInItemResponse]
+
+    model_config = {"from_attributes": True}
+
+
+class CheckInComplete(BaseModel):
+    done_task_ids: list[int] = Field(default_factory=list)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class CheckInListResponse(BaseModel):
+    checkins: list[CheckInResponse]

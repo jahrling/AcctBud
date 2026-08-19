@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     vapid_private_key: str = ""
     vapid_subject: str = "mailto:acctbud@example.com"
     db_path: str = "data/acctbud.db"
+    journal_path: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

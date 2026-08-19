@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePush } from "./usePush";
-import { sendTestPush, getHealth, getTasks } from "./api";
+import { sendTestPush, getHealth, getTasks, getTodayCheckIn, type CheckIn } from "./api";
 
 function App() {
   const { state, error, subscribe, unsubscribe } = usePush();
   const [health, setHealth] = useState<{ version: string; server_time: string; timezone: string } | null>(null);
   const [testResult, setTestResult] = useState<string>("");
   const [activeCount, setActiveCount] = useState<number | null>(null);
+  const [todayCheckIn, setTodayCheckIn] = useState<CheckIn | null>(null);
 
   useEffect(() => {
     getHealth().then(setHealth).catch(() => {});
     getTasks("active").then((r) => setActiveCount(r.active_count)).catch(() => {});
+    getTodayCheckIn().then(setTodayCheckIn).catch(() => {});
   }, []);
 
   const handleTest = async () => {
@@ -53,6 +55,47 @@ function App() {
               <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
                 active task{activeCount !== 1 ? "s" : ""}
               </div>
+            </div>
+            <span style={{ color: "var(--text-muted)", fontSize: "1.25rem" }}>&rarr;</span>
+          </section>
+        </Link>
+      )}
+
+      {todayCheckIn && (
+        <Link to="/checkin/today" style={{ textDecoration: "none" }}>
+          <section
+            style={{
+              background: "var(--bg-card)",
+              borderRadius: "var(--radius)",
+              padding: "1.25rem",
+              marginBottom: "1rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              {todayCheckIn.status === "completed" ? (
+                <>
+                  <div style={{ fontSize: "0.95rem", color: "var(--success)" }}>
+                    Check-in complete
+                  </div>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                    {todayCheckIn.items.filter((i) => i.done).length} of{" "}
+                    {todayCheckIn.items.length} done
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>
+                    Evening check-in
+                  </div>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                    {todayCheckIn.items.length} task{todayCheckIn.items.length !== 1 ? "s" : ""} to
+                    review
+                  </div>
+                </>
+              )}
             </div>
             <span style={{ color: "var(--text-muted)", fontSize: "1.25rem" }}>&rarr;</span>
           </section>
