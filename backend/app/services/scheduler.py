@@ -31,7 +31,7 @@ def _evening_body(db) -> str:
     count = db.query(Task).filter(Task.status == "active").count()
     if count == 0:
         return "How did today go?"
-    return f"Evening check-in — {count} task{'s' if count != 1 else ''} on your list."
+    return f"{count} task{'s' if count != 1 else ''} on your list."
 
 
 def send_scheduled_notification(kind: str) -> None:

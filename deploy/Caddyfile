@@ -4,15 +4,17 @@
 # forwards to Caddy on port 8080.  All routes live under /acctbud so
 # multiple apps can share a single Tailscale Serve host.
 #
-#   tailscale serve /acctbud http://localhost:8081
+#   tailscale serve /acctbud http://localhost:8080
 
 :8080 {
-    root * /srv/pwa
-    file_server
+    handle_path /acctbud/* {
+        root * /srv/pwa
+        file_server
 
-    handle /api/* {
-        reverse_proxy backend:8000
+        handle /api/* {
+            reverse_proxy backend:8000
+        }
+
+        try_files {path} /index.html
     }
-
-    try_files {path} /index.html
 }

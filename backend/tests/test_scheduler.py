@@ -45,7 +45,7 @@ def test_send_scheduled_notification_evening_no_tasks(
 
 @patch(
     "app.services.scheduler._evening_body",
-    return_value="Evening check-in — 3 tasks on your list.",
+    return_value="3 tasks on your list.",
 )
 @patch("app.services.scheduler.send_to_all")
 @patch("app.services.scheduler.SessionLocal")
@@ -61,7 +61,7 @@ def test_send_scheduled_notification_evening_with_tasks(
     mock_send_to_all.assert_called_once_with(
         mock_db,
         title="Evening check-in",
-        body="Evening check-in — 3 tasks on your list.",
+        body="3 tasks on your list.",
         url="/acctbud/",
         kind="evening",
     )
@@ -115,7 +115,7 @@ def test_evening_body_one_task():
 
     mock_db = MagicMock()
     mock_db.query.return_value.filter.return_value.count.return_value = 1
-    assert _evening_body(mock_db) == "Evening check-in — 1 task on your list."
+    assert _evening_body(mock_db) == "1 task on your list."
 
 
 def test_evening_body_multiple_tasks():
@@ -123,4 +123,4 @@ def test_evening_body_multiple_tasks():
 
     mock_db = MagicMock()
     mock_db.query.return_value.filter.return_value.count.return_value = 5
-    assert _evening_body(mock_db) == "Evening check-in — 5 tasks on your list."
+    assert _evening_body(mock_db) == "5 tasks on your list."

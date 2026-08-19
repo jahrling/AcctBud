@@ -57,6 +57,7 @@ export interface TaskListResponse {
 
 export async function getTasks(status = "active"): Promise<TaskListResponse> {
   const res = await fetch(`${BASE}/api/tasks?status=${status}`);
+  if (!res.ok) throw new Error("Failed to fetch tasks");
   return res.json();
 }
 

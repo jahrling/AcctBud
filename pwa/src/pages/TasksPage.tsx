@@ -46,24 +46,26 @@ function TasksPage() {
 
   const handleSaveEdit = async () => {
     if (editingId === null) return;
+    const trimmed = editTitle.trim();
+    if (!trimmed) return;
     await updateTask(editingId, {
-      title: editTitle.trim() || undefined,
-      note: editNote.trim() || undefined,
+      title: trimmed,
+      note: editNote.trim() || null,
     });
     setEditingId(null);
     load();
   };
 
-  const handleMoveUp = async (task: Task, index: number) => {
-    if (index === 0) return;
-    const prev = tasks[index - 1];
+  const handleMoveUp = async (task: Task, categoryTasks: Task[], indexInGroup: number) => {
+    if (indexInGroup === 0) return;
+    const prev = categoryTasks[indexInGroup - 1];
     await updateTask(task.id, { sort_order: prev.sort_order - 0.5 });
     load();
   };
 
-  const handleMoveDown = async (task: Task, index: number) => {
-    if (index === tasks.length - 1) return;
-    const next = tasks[index + 1];
+  const handleMoveDown = async (task: Task, categoryTasks: Task[], indexInGroup: number) => {
+    if (indexInGroup === categoryTasks.length - 1) return;
+    const next = categoryTasks[indexInGroup + 1];
     await updateTask(task.id, { sort_order: next.sort_order + 0.5 });
     load();
   };
@@ -161,7 +163,6 @@ function TasksPage() {
         <TaskGroup
           label="Work"
           tasks={workTasks}
-          allTasks={tasks}
           editingId={editingId}
           editTitle={editTitle}
           editNote={editNote}
@@ -180,7 +181,6 @@ function TasksPage() {
         <TaskGroup
           label="Personal"
           tasks={personalTasks}
-          allTasks={tasks}
           editingId={editingId}
           editTitle={editTitle}
           editNote={editNote}
@@ -201,7 +201,6 @@ function TasksPage() {
 function TaskGroup({
   label,
   tasks,
-  allTasks,
   editingId,
   editTitle,
   editNote,
@@ -216,7 +215,6 @@ function TaskGroup({
 }: {
   label: string;
   tasks: Task[];
-  allTasks: Task[];
   editingId: number | null;
   editTitle: string;
   editNote: string;
@@ -226,8 +224,8 @@ function TaskGroup({
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onStatusChange: (t: Task, s: Task["status"]) => void;
-  onMoveUp: (t: Task, i: number) => void;
-  onMoveDown: (t: Task, i: number) => void;
+  onMoveUp: (t: Task, categoryTasks: Task[], i: number) => void;
+  onMoveDown: (t: Task, categoryTasks: Task[], i: number) => void;
 }) {
   return (
     <section style={{ marginBottom: "1.25rem" }}>
@@ -249,8 +247,7 @@ function TaskGroup({
           overflow: "hidden",
         }}
       >
-        {tasks.map((task) => {
-          const globalIndex = allTasks.findIndex((t) => t.id === task.id);
+        {tasks.map((task, index) => {
           const isEditing = editingId === task.id;
 
           return (
@@ -313,8 +310,8 @@ function TaskGroup({
                     )}
                   </div>
                   <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
-                    <ActionBtn label="↑" onClick={() => onMoveUp(task, globalIndex)} />
-                    <ActionBtn label="↓" onClick={() => onMoveDown(task, globalIndex)} />
+                    <ActionBtn label="↑" onClick={() => onMoveUp(task, tasks, index)} />
+                    <ActionBtn label="↓" onClick={() => onMoveDown(task, tasks, index)} />
                     {task.status === "active" && (
                       <ActionBtn label="⏸" onClick={() => onStatusChange(task, "paused")} />
                     )}

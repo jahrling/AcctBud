@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -9,7 +11,7 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
 @router.get("", response_model=TaskListResponse)
-def list_tasks(status: str = "active", db: Session = Depends(get_db)):
+def list_tasks(status: Literal["active", "paused", "archived", "all"] = "active", db: Session = Depends(get_db)):
     query = db.query(Task)
     if status != "all":
         query = query.filter(Task.status == status)
@@ -42,7 +44,6 @@ def update_task(task_id: int, body: TaskUpdate, db: Session = Depends(get_db)):
     update_data = body.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(task, field, value)
-    task.updated_at = utcnow()
 
     db.commit()
     db.refresh(task)
