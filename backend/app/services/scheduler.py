@@ -6,6 +6,7 @@ from pytz import timezone as pytz_timezone
 
 from app.config import settings
 from app.database import SessionLocal
+from app.models import Task
 from app.services.push import send_to_all
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,13 @@ NOTIFICATION_CONTENT = {
 }
 
 
+def _evening_body(db) -> str:
+    count = db.query(Task).filter(Task.status == "active").count()
+    if count == 0:
+        return "How did today go?"
+    return f"Evening check-in — {count} task{'s' if count != 1 else ''} on your list."
+
+
 def send_scheduled_notification(kind: str) -> None:
     content = NOTIFICATION_CONTENT.get(kind)
     if not content:
@@ -34,10 +42,11 @@ def send_scheduled_notification(kind: str) -> None:
 
     db = SessionLocal()
     try:
+        body = _evening_body(db) if kind == "evening" else content["body"]
         results = send_to_all(
             db,
             title=content["title"],
-            body=content["body"],
+            body=body,
             url=content["url"],
             kind=kind,
         )

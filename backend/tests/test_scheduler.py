@@ -1,5 +1,4 @@
 from unittest.mock import patch, MagicMock
-from datetime import datetime
 
 from app.services.scheduler import send_scheduled_notification, NOTIFICATION_CONTENT
 
@@ -23,9 +22,12 @@ def test_send_scheduled_notification_morning(mock_session_cls, mock_send_to_all)
     mock_db.close.assert_called_once()
 
 
+@patch("app.services.scheduler._evening_body", return_value="How did today go?")
 @patch("app.services.scheduler.send_to_all")
 @patch("app.services.scheduler.SessionLocal")
-def test_send_scheduled_notification_evening(mock_session_cls, mock_send_to_all):
+def test_send_scheduled_notification_evening_no_tasks(
+    mock_session_cls, mock_send_to_all, mock_evening_body
+):
     mock_db = MagicMock()
     mock_session_cls.return_value = mock_db
     mock_send_to_all.return_value = ["sent"]
@@ -36,6 +38,30 @@ def test_send_scheduled_notification_evening(mock_session_cls, mock_send_to_all)
         mock_db,
         title="Evening check-in",
         body="How did today go?",
+        url="/acctbud/",
+        kind="evening",
+    )
+
+
+@patch(
+    "app.services.scheduler._evening_body",
+    return_value="Evening check-in — 3 tasks on your list.",
+)
+@patch("app.services.scheduler.send_to_all")
+@patch("app.services.scheduler.SessionLocal")
+def test_send_scheduled_notification_evening_with_tasks(
+    mock_session_cls, mock_send_to_all, mock_evening_body
+):
+    mock_db = MagicMock()
+    mock_session_cls.return_value = mock_db
+    mock_send_to_all.return_value = ["sent"]
+
+    send_scheduled_notification("evening")
+
+    mock_send_to_all.assert_called_once_with(
+        mock_db,
+        title="Evening check-in",
+        body="Evening check-in — 3 tasks on your list.",
         url="/acctbud/",
         kind="evening",
     )
@@ -74,3 +100,27 @@ def test_start_scheduler_adds_jobs(mock_scheduler):
     calls = mock_scheduler.add_job.call_args_list
     assert calls[0].kwargs["id"] == "morning_push"
     assert calls[1].kwargs["id"] == "evening_push"
+
+
+def test_evening_body_zero_tasks():
+    from app.services.scheduler import _evening_body
+
+    mock_db = MagicMock()
+    mock_db.query.return_value.filter.return_value.count.return_value = 0
+    assert _evening_body(mock_db) == "How did today go?"
+
+
+def test_evening_body_one_task():
+    from app.services.scheduler import _evening_body
+
+    mock_db = MagicMock()
+    mock_db.query.return_value.filter.return_value.count.return_value = 1
+    assert _evening_body(mock_db) == "Evening check-in — 1 task on your list."
+
+
+def test_evening_body_multiple_tasks():
+    from app.services.scheduler import _evening_body
+
+    mock_db = MagicMock()
+    mock_db.query.return_value.filter.return_value.count.return_value = 5
+    assert _evening_body(mock_db) == "Evening check-in — 5 tasks on your list."

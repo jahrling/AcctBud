@@ -36,3 +36,53 @@ export async function getHealth(): Promise<{ version: string; server_time: strin
   const res = await fetch(`${BASE}/api/health`);
   return res.json();
 }
+
+// Tasks
+
+export interface Task {
+  id: number;
+  title: string;
+  note: string | null;
+  category: "work" | "personal";
+  status: "active" | "paused" | "archived";
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskListResponse {
+  tasks: Task[];
+  active_count: number;
+}
+
+export async function getTasks(status = "active"): Promise<TaskListResponse> {
+  const res = await fetch(`${BASE}/api/tasks?status=${status}`);
+  return res.json();
+}
+
+export async function createTask(
+  title: string,
+  category: "work" | "personal",
+  note?: string,
+): Promise<Task> {
+  const res = await fetch(`${BASE}/api/tasks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, category, note: note ?? null }),
+  });
+  if (!res.ok) throw new Error("Failed to create task");
+  return res.json();
+}
+
+export async function updateTask(
+  id: number,
+  data: Partial<Pick<Task, "title" | "note" | "category" | "status" | "sort_order">>,
+): Promise<Task> {
+  const res = await fetch(`${BASE}/api/tasks/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update task");
+  return res.json();
+}

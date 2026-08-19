@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class HealthResponse(BaseModel):
@@ -26,6 +27,38 @@ class PushSubscriptionResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TaskCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+    category: Literal["work", "personal"]
+    note: str | None = None
+
+
+class TaskUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=120)
+    note: str | None = None
+    category: Literal["work", "personal"] | None = None
+    status: Literal["active", "paused", "archived"] | None = None
+    sort_order: float | None = None
+
+
+class TaskResponse(BaseModel):
+    id: int
+    title: str
+    note: str | None
+    category: str
+    status: str
+    sort_order: float
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class TaskListResponse(BaseModel):
+    tasks: list[TaskResponse]
+    active_count: int
 
 
 class NotificationLogResponse(BaseModel):
