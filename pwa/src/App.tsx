@@ -34,31 +34,35 @@ function App() {
         </p>
       </header>
 
-      {activeCount !== null && (
-        <Link to="/tasks" style={{ textDecoration: "none" }}>
-          <section
-            style={{
-              background: "var(--bg-card)",
-              borderRadius: "var(--radius)",
-              padding: "1.25rem",
-              marginBottom: "1rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text)" }}>
-                {activeCount}
-              </div>
-              <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
-                active task{activeCount !== 1 ? "s" : ""}
-              </div>
-            </div>
-            <span style={{ color: "var(--text-muted)", fontSize: "1.25rem" }}>&rarr;</span>
-          </section>
-        </Link>
-      )}
+      <Link to="/tasks" style={{ textDecoration: "none" }}>
+        <section
+          style={{
+            background: "var(--bg-card)",
+            borderRadius: "var(--radius)",
+            padding: "1.25rem",
+            marginBottom: "1rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            {activeCount !== null ? (
+              <>
+                <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text)" }}>
+                  {activeCount}
+                </div>
+                <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+                  active task{activeCount !== 1 ? "s" : ""}
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>Tasks</div>
+            )}
+          </div>
+          <span style={{ color: "var(--text-muted)", fontSize: "1.25rem" }}>&rarr;</span>
+        </section>
+      </Link>
 
       {todayCheckIn && (
         <Link to="/checkin/today" style={{ textDecoration: "none" }}>
