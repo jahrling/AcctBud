@@ -16,12 +16,12 @@ NOTIFICATION_CONTENT = {
     "morning": {
         "title": "Good morning",
         "body": "Time to plan the day.",
-        "url": "/",
+        "url": "/acctbud/",
     },
     "evening": {
         "title": "Evening check-in",
         "body": "How did today go?",
-        "url": "/",
+        "url": "/acctbud/",
     },
 }
 

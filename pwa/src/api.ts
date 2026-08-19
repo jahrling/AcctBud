@@ -1,4 +1,4 @@
-const BASE = import.meta.env.DEV ? "" : "";
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export async function getVapidPublicKey(): Promise<string> {
   const res = await fetch(`${BASE}/api/push/vapid-public-key`);
