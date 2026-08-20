@@ -229,7 +229,7 @@ function CheckInPage() {
       <button
         className="btn-primary"
         onClick={handleSubmit}
-        disabled={submitting || checkIn.items.length === 0}
+        disabled={submitting}
         style={{ width: "100%", marginBottom: "1.5rem" }}
       >
         {submitting

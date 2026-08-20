@@ -49,10 +49,10 @@ function HistoryPage() {
             : ci.status === "missed"
               ? "var(--accent-bright)"
               : "var(--text-muted)";
+        const isCompleted = ci.status === "completed";
 
-        return (
+        const card = (
           <div
-            key={ci.id}
             style={{
               background: "var(--bg-card)",
               borderRadius: "var(--radius)",
@@ -70,22 +70,27 @@ function HistoryPage() {
             >
               <div>
                 <span style={{ fontSize: "0.95rem" }}>{ci.for_date}</span>
-                {ci.status === "completed" && total > 0 && (
+                {isCompleted && total > 0 && (
                   <span style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginLeft: "0.5rem" }}>
                     {doneCount} of {total}
                   </span>
                 )}
               </div>
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  textTransform: "uppercase",
-                  color: statusColor,
-                  fontWeight: 600,
-                }}
-              >
-                {ci.status}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    textTransform: "uppercase",
+                    color: statusColor,
+                    fontWeight: 600,
+                  }}
+                >
+                  {ci.status}
+                </span>
+                {isCompleted && (
+                  <span style={{ color: "var(--text-muted)", fontSize: "1.25rem" }}>&rarr;</span>
+                )}
+              </div>
             </div>
             {ci.note && (
               <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: 0 }}>
@@ -93,6 +98,14 @@ function HistoryPage() {
               </p>
             )}
           </div>
+        );
+
+        return isCompleted ? (
+          <Link key={ci.id} to={`/reflect/${ci.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+            {card}
+          </Link>
+        ) : (
+          <div key={ci.id}>{card}</div>
         );
       })}
     </div>

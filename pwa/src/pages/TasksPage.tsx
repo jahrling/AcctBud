@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { type Task, getTasks, createTask, updateTask } from "../api";
 
@@ -13,6 +13,7 @@ function TasksPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editNote, setEditNote] = useState("");
+  const addRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async () => {
     const res = await getTasks(filter);
@@ -30,6 +31,7 @@ function TasksPage() {
     if (!title) return;
     await createTask(title, newCategory);
     setNewTitle("");
+    if (addRef.current) addRef.current.style.height = "auto";
     load();
   };
 
@@ -98,39 +100,54 @@ function TasksPage() {
         </div>
       )}
 
-      <form onSubmit={handleAdd} style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
-        <input
-          type="text"
+      <form onSubmit={handleAdd} style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem", alignItems: "flex-end" }}>
+        <textarea
+          ref={addRef}
           value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
+          onChange={(e) => {
+            setNewTitle(e.target.value);
+            e.target.style.height = "auto";
+            e.target.style.height = e.target.scrollHeight + "px";
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleAdd(e);
+            }
+          }}
           placeholder="Add a task..."
           maxLength={120}
+          rows={1}
           style={{
             flex: 1,
+            minWidth: 0,
             padding: "10px 14px",
             borderRadius: "var(--radius)",
             border: "1px solid var(--accent)",
             background: "var(--bg-card)",
             color: "var(--text)",
-            fontSize: "0.95rem",
+            fontSize: "16px",
+            resize: "none",
+            lineHeight: 1.4,
+            overflow: "hidden",
           }}
         />
         <button
           type="button"
           onClick={() => setNewCategory(newCategory === "work" ? "personal" : "work")}
           style={{
-            padding: "10px 12px",
+            padding: "10px 8px",
             borderRadius: "var(--radius)",
             background: "var(--accent)",
             color: "var(--text)",
             fontSize: "0.8rem",
             whiteSpace: "nowrap",
-            minWidth: "4.5rem",
+            flexShrink: 0,
           }}
         >
           {newCategory}
         </button>
-        <button type="submit" className="btn-primary" style={{ padding: "10px 16px" }}>
+        <button type="submit" className="btn-primary" style={{ padding: "10px 14px", flexShrink: 0 }}>
           +
         </button>
       </form>
