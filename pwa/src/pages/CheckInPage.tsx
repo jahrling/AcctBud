@@ -241,6 +241,27 @@ function CheckInPage() {
               : `Submit ${selected.size} of ${checkIn.items.length}`}
       </button>
 
+      {checkIn.status === "completed" && (
+        <Link
+          to={`/reflect/${checkIn.id}`}
+          style={{
+            display: "block",
+            textAlign: "center",
+            background: checkIn.reflection_finished
+              ? "var(--bg-card)"
+              : "var(--accent)",
+            color: "var(--text)",
+            borderRadius: "var(--radius)",
+            padding: "12px 24px",
+            fontWeight: 600,
+            textDecoration: "none",
+            marginBottom: "1rem",
+          }}
+        >
+          {checkIn.reflection_finished ? "View reflection" : "Start reflection"}
+        </Link>
+      )}
+
       <div style={{ textAlign: "center" }}>
         <Link
           to="/history"

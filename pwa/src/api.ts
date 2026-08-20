@@ -107,6 +107,8 @@ export interface CheckIn {
   status: "pending" | "completed" | "missed";
   note: string | null;
   items: CheckInItem[];
+  reflection_finished: boolean;
+  reflection_journal_written: boolean;
 }
 
 export async function getTodayCheckIn(): Promise<CheckIn> {
@@ -132,5 +134,106 @@ export async function completeCheckIn(
 export async function getCheckIns(limit = 30): Promise<{ checkins: CheckIn[] }> {
   const res = await fetch(`${BASE}/api/checkins?limit=${limit}`);
   if (!res.ok) throw new Error("Failed to fetch check-ins");
+  return res.json();
+}
+
+// Reflections
+
+export interface ReflectionMessage {
+  id: number;
+  role: "assistant" | "user";
+  content: string;
+  created_at: string;
+}
+
+export interface ReflectionData {
+  messages: ReflectionMessage[];
+  finished: boolean;
+}
+
+export async function getReflection(checkinId: number): Promise<ReflectionData> {
+  const res = await fetch(`${BASE}/api/reflections/${checkinId}`);
+  if (!res.ok) throw new Error("Failed to fetch reflection");
+  return res.json();
+}
+
+export async function streamReflectionChat(
+  checkinId: number,
+  message: string | null,
+  onToken: (token: string) => void,
+  onDone: () => void,
+  onError: (error: string) => void,
+): Promise<void> {
+  const res = await fetch(`${BASE}/api/reflections/${checkinId}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+
+  if (!res.ok) {
+    onError("Failed to start reflection chat");
+    return;
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop()!;
+
+    for (const block of parts) {
+      const eventMatch = block.match(/^event: (\w+)/m);
+      const dataMatch = block.match(/^data: (.+)$/m);
+      if (!eventMatch || !dataMatch) continue;
+
+      const eventType = eventMatch[1];
+      const data = JSON.parse(dataMatch[1]);
+
+      if (eventType === "token") {
+        onToken(data.content);
+      } else if (eventType === "done") {
+        onDone();
+        return;
+      } else if (eventType === "error") {
+        onError(data.detail || "LLM error");
+        return;
+      }
+    }
+  }
+
+  // Process any remaining buffer after stream ends
+  if (buffer.trim()) {
+    const eventMatch = buffer.match(/^event: (\w+)/m);
+    const dataMatch = buffer.match(/^data: (.+)$/m);
+    if (eventMatch && dataMatch) {
+      const eventType = eventMatch[1];
+      const data = JSON.parse(dataMatch[1]);
+      if (eventType === "token") {
+        onToken(data.content);
+      } else if (eventType === "done") {
+        onDone();
+        return;
+      } else if (eventType === "error") {
+        onError(data.detail || "LLM error");
+        return;
+      }
+    }
+  }
+  onDone();
+}
+
+export async function finishReflection(
+  checkinId: number,
+): Promise<{ journal_written: boolean }> {
+  const res = await fetch(`${BASE}/api/reflections/${checkinId}/finish`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to finish reflection");
   return res.json();
 }

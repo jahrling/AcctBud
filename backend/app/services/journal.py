@@ -89,6 +89,61 @@ def write_journal_entry(check_in: CheckIn) -> bool:
         return False
 
 
+def _render_reflection_entry(check_in: CheckIn, messages: list) -> str:
+    completed = check_in.completed_at or datetime.now(timezone.utc)
+    utc_str = completed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    lines = [
+        "---",
+        f"date: {utc_str}",
+        "type: reflection",
+        f"for_date: {check_in.for_date}",
+        f"check_in_id: {check_in.id}",
+        "---",
+        "",
+        "## Reflection",
+        "",
+    ]
+
+    for msg in messages:
+        if msg.role == "assistant":
+            lines.append(f"**AcctBud:** {msg.content}")
+            lines.append("")
+        elif msg.role == "user":
+            lines.append(f"**Me:** {msg.content}")
+            lines.append("")
+
+    return "\n".join(lines)
+
+
+def write_reflection_entry(check_in: CheckIn, messages: list) -> bool:
+    journal_dir = _journal_dir()
+    if journal_dir is None:
+        return False
+
+    if not _DATE_RE.fullmatch(check_in.for_date):
+        logger.error("Invalid for_date format: %s", check_in.for_date)
+        return False
+
+    year, month, day = check_in.for_date.split("-")
+    target_dir = journal_dir / year / month
+    target_file = target_dir / f"{day}-reflection.md"
+
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_file.write_text(
+            _render_reflection_entry(check_in, messages), encoding="utf-8"
+        )
+        return True
+    except OSError as e:
+        logger.warning(
+            "Could not write reflection entry for %s — Vault may be locked: %s",
+            check_in.for_date,
+            e,
+        )
+        return False
+
+
 def retry_pending_entries(db: Session) -> int:
     pending = (
         db.query(CheckIn)
@@ -107,4 +162,39 @@ def retry_pending_entries(db: Session) -> int:
     if written:
         db.commit()
         logger.info("Retried %d pending journal entries, wrote %d", len(pending), written)
+    return written
+
+
+def retry_pending_reflections(db: Session) -> int:
+    from app.models import ReflectionMessage
+
+    pending = (
+        db.query(CheckIn)
+        .filter(
+            CheckIn.reflection_finished.is_(True),
+            CheckIn.reflection_journal_written.is_(False),
+        )
+        .all()
+    )
+
+    written = 0
+    for check_in in pending:
+        messages = (
+            db.query(ReflectionMessage)
+            .filter(
+                ReflectionMessage.check_in_id == check_in.id,
+                ReflectionMessage.role != "system",
+            )
+            .order_by(ReflectionMessage.created_at)
+            .all()
+        )
+        if not messages:
+            continue
+        if write_reflection_entry(check_in, messages):
+            check_in.reflection_journal_written = True
+            written += 1
+
+    if written:
+        db.commit()
+        logger.info("Retried %d pending reflection entries", written)
     return written

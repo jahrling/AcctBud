@@ -48,3 +48,7 @@ button:active {
   background: var(--accent);
   color: var(--text);
 }
+
+@keyframes blink {
+  50% { opacity: 0; }
+}

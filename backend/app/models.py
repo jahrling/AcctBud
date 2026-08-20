@@ -51,6 +51,15 @@ class CheckIn(Base):
     items: Mapped[list["CheckInItem"]] = relationship(
         back_populates="check_in", cascade="all, delete-orphan"
     )
+    reflection_finished: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    reflection_journal_written: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    reflection_messages: Mapped[list["ReflectionMessage"]] = relationship(
+        back_populates="check_in", cascade="all, delete-orphan"
+    )
 
 
 class CheckInItem(Base):
@@ -64,6 +73,20 @@ class CheckInItem(Base):
     done: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     check_in: Mapped["CheckIn"] = relationship(back_populates="items")
+
+
+class ReflectionMessage(Base):
+    __tablename__ = "reflection_message"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    check_in_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("check_in.id"), nullable=False
+    )
+    role: Mapped[str] = mapped_column(String, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    check_in: Mapped["CheckIn"] = relationship(back_populates="reflection_messages")
 
 
 class NotificationLog(Base):

@@ -10,7 +10,7 @@ from app.config import settings
 from app.database import SessionLocal
 from app.models import CheckIn, Task
 from app.services.checkins import get_or_create_checkin, today_str
-from app.services.journal import retry_pending_entries
+from app.services.journal import retry_pending_entries, retry_pending_reflections
 from app.services.push import send_to_all
 
 logger = logging.getLogger(__name__)
@@ -122,6 +122,7 @@ def retry_journals() -> None:
     db = SessionLocal()
     try:
         retry_pending_entries(db)
+        retry_pending_reflections(db)
     finally:
         db.close()
 

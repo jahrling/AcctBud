@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     vapid_subject: str = "mailto:acctbud@example.com"
     db_path: str = "data/acctbud.db"
     journal_path: str = ""
+    ollama_base_url: str = "http://host.docker.internal:11434"
+    ollama_model: str = "qwen3.5:9b"
+    ollama_max_tokens: int = 256
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

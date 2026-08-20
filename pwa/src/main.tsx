@@ -5,6 +5,7 @@ import App from "./App";
 import TasksPage from "./pages/TasksPage";
 import CheckInPage from "./pages/CheckInPage";
 import HistoryPage from "./pages/HistoryPage";
+import ReflectionPage from "./pages/ReflectionPage";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -15,6 +16,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/checkin/today" element={<CheckInPage />} />
         <Route path="/history" element={<HistoryPage />} />
+        <Route path="/reflect/:checkinId" element={<ReflectionPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

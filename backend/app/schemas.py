@@ -94,6 +94,8 @@ class CheckInResponse(BaseModel):
     status: str
     note: str | None
     items: list[CheckInItemResponse]
+    reflection_finished: bool
+    reflection_journal_written: bool
 
     model_config = {"from_attributes": True}
 
@@ -105,3 +107,28 @@ class CheckInComplete(BaseModel):
 
 class CheckInListResponse(BaseModel):
     checkins: list[CheckInResponse]
+
+
+# Reflections
+
+
+class ReflectionMessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ReflectionResponse(BaseModel):
+    messages: list[ReflectionMessageResponse]
+    finished: bool
+
+
+class ReflectionChatRequest(BaseModel):
+    message: str | None = Field(default=None, max_length=1000)
+
+
+class ReflectionFinishResponse(BaseModel):
+    journal_written: bool
