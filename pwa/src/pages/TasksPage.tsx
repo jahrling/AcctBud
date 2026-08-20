@@ -61,14 +61,20 @@ function TasksPage() {
   const handleMoveUp = async (task: Task, categoryTasks: Task[], indexInGroup: number) => {
     if (indexInGroup === 0) return;
     const prev = categoryTasks[indexInGroup - 1];
-    await updateTask(task.id, { sort_order: prev.sort_order - 0.5 });
+    await Promise.all([
+      updateTask(task.id, { sort_order: prev.sort_order }),
+      updateTask(prev.id, { sort_order: task.sort_order }),
+    ]);
     load();
   };
 
   const handleMoveDown = async (task: Task, categoryTasks: Task[], indexInGroup: number) => {
     if (indexInGroup === categoryTasks.length - 1) return;
     const next = categoryTasks[indexInGroup + 1];
-    await updateTask(task.id, { sort_order: next.sort_order + 0.5 });
+    await Promise.all([
+      updateTask(task.id, { sort_order: next.sort_order }),
+      updateTask(next.id, { sort_order: task.sort_order }),
+    ]);
     load();
   };
 
