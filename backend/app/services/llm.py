@@ -34,6 +34,7 @@ def stream_chat(
         "model": model or settings.ollama_model,
         "messages": messages,
         "stream": True,
+        "think": False,
         "options": {
             "temperature": temperature,
             "num_predict": max_tokens or settings.ollama_max_tokens,
