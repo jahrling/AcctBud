@@ -1,20 +1,18 @@
 # AcctBud — Caddy reverse proxy
 #
-# Tailscale Serve handles HTTPS termination (valid certs, port 443) and
-# forwards to Caddy on port 8080.  All routes live under /acctbud so
-# multiple apps can share a single Tailscale Serve host.
+# Tailscale Serve handles HTTPS termination and path-prefix stripping.
+# A request to https://therig.…/acctbud/foo arrives here as /foo.
 #
 #   tailscale serve /acctbud http://localhost:8080
 
 :8080 {
-    handle_path /acctbud/* {
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    handle {
         root * /srv/pwa
-        file_server
-
-        handle /api/* {
-            reverse_proxy backend:8000
-        }
-
         try_files {path} /index.html
+        file_server
     }
 }
