@@ -6,6 +6,7 @@ import TasksPage from "./pages/TasksPage";
 import CheckInPage from "./pages/CheckInPage";
 import HistoryPage from "./pages/HistoryPage";
 import ReflectionPage from "./pages/ReflectionPage";
+import { UpdateBanner } from "./UpdateBanner";
 import "./index.css";
 
 class ErrorBoundary extends React.Component<
@@ -38,6 +39,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter basename={basename}>
+        <UpdateBanner />
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/tasks" element={<TasksPage />} />
