@@ -13,6 +13,7 @@ function TasksPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editNote, setEditNote] = useState("");
+  const [reordering, setReordering] = useState(false);
   const addRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async () => {
@@ -158,7 +159,7 @@ function TasksPage() {
         </button>
       </form>
 
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem", alignItems: "center" }}>
         {(["active", "paused", "archived", "all"] as const).map((f) => (
           <button
             key={f}
@@ -174,6 +175,19 @@ function TasksPage() {
             {f}
           </button>
         ))}
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => setReordering(!reordering)}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "var(--radius)",
+            background: reordering ? "var(--accent-bright)" : "var(--accent)",
+            color: "var(--text)",
+            fontSize: "0.8rem",
+          }}
+        >
+          {reordering ? "Done" : "Reorder"}
+        </button>
       </div>
 
       {tasks.length === 0 && (
@@ -189,6 +203,7 @@ function TasksPage() {
           editingId={editingId}
           editTitle={editTitle}
           editNote={editNote}
+          reordering={reordering}
           onEditTitle={setEditTitle}
           onEditNote={setEditNote}
           onStartEdit={handleStartEdit}
@@ -207,6 +222,7 @@ function TasksPage() {
           editingId={editingId}
           editTitle={editTitle}
           editNote={editNote}
+          reordering={reordering}
           onEditTitle={setEditTitle}
           onEditNote={setEditNote}
           onStartEdit={handleStartEdit}
@@ -227,6 +243,7 @@ function TaskGroup({
   editingId,
   editTitle,
   editNote,
+  reordering,
   onEditTitle,
   onEditNote,
   onStartEdit,
@@ -241,6 +258,7 @@ function TaskGroup({
   editingId: number | null;
   editTitle: string;
   editNote: string;
+  reordering: boolean;
   onEditTitle: (v: string) => void;
   onEditNote: (v: string) => void;
   onStartEdit: (t: Task) => void;
@@ -333,19 +351,26 @@ function TaskGroup({
                     )}
                   </div>
                   <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
-                    <ActionBtn label="↑" onClick={() => onMoveUp(task, tasks, index)} />
-                    <ActionBtn label="↓" onClick={() => onMoveDown(task, tasks, index)} />
-                    {task.status === "active" && (
-                      <ActionBtn label="⏸" onClick={() => onStatusChange(task, "paused")} />
-                    )}
-                    {task.status === "paused" && (
-                      <ActionBtn label="▶" onClick={() => onStatusChange(task, "active")} />
-                    )}
-                    {task.status !== "archived" && (
-                      <ActionBtn label="✕" onClick={() => onStatusChange(task, "archived")} />
-                    )}
-                    {task.status === "archived" && (
-                      <ActionBtn label="↩" onClick={() => onStatusChange(task, "active")} />
+                    {reordering ? (
+                      <>
+                        <ActionBtn label="↑" onClick={() => onMoveUp(task, tasks, index)} disabled={index === 0} />
+                        <ActionBtn label="↓" onClick={() => onMoveDown(task, tasks, index)} disabled={index === tasks.length - 1} />
+                      </>
+                    ) : (
+                      <>
+                        {task.status === "active" && (
+                          <ActionBtn label="⏸" onClick={() => onStatusChange(task, "paused")} />
+                        )}
+                        {task.status === "paused" && (
+                          <ActionBtn label="▶" onClick={() => onStatusChange(task, "active")} />
+                        )}
+                        {task.status !== "archived" && (
+                          <ActionBtn label="✕" onClick={() => onStatusChange(task, "archived")} />
+                        )}
+                        {task.status === "archived" && (
+                          <ActionBtn label="↩" onClick={() => onStatusChange(task, "active")} />
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -358,10 +383,11 @@ function TaskGroup({
   );
 }
 
-function ActionBtn({ label, onClick }: { label: string; onClick: () => void }) {
+function ActionBtn({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       style={{
         padding: "4px 8px",
         borderRadius: "6px",
@@ -369,6 +395,7 @@ function ActionBtn({ label, onClick }: { label: string; onClick: () => void }) {
         color: "var(--text)",
         fontSize: "0.8rem",
         minWidth: "28px",
+        opacity: disabled ? 0.3 : 1,
       }}
     >
       {label}
