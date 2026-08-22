@@ -283,6 +283,32 @@ class TestReflectionFinish:
         assert res.status_code == 409
 
 
+class TestReflectionReopen:
+    def test_reopen_allows_continued_chat(self, client, db_session):
+        ci, _ = _seed_completed_checkin(db_session)
+        ci.reflection_finished = True
+        db_session.commit()
+
+        res = client.post(f"/api/reflections/{ci.id}/chat", json={"message": None})
+        assert res.status_code == 409
+
+        res = client.post(f"/api/reflections/{ci.id}/reopen")
+        assert res.status_code == 200
+        assert res.json()["reopened"] is True
+
+        db_session.refresh(ci)
+        assert ci.reflection_finished is False
+
+    def test_reopen_not_finished_returns_409(self, client, db_session):
+        ci, _ = _seed_completed_checkin(db_session)
+        res = client.post(f"/api/reflections/{ci.id}/reopen")
+        assert res.status_code == 409
+
+    def test_reopen_not_found(self, client):
+        res = client.post("/api/reflections/999/reopen")
+        assert res.status_code == 404
+
+
 class TestReflectionJournal:
     def test_render_includes_conversation(self, db_session):
         from app.services.journal import _render_reflection_entry

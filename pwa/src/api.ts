@@ -237,3 +237,12 @@ export async function finishReflection(
   if (!res.ok) throw new Error("Failed to finish reflection");
   return res.json();
 }
+
+export async function reopenReflection(
+  checkinId: number,
+): Promise<void> {
+  const res = await fetch(`${BASE}/api/reflections/${checkinId}/reopen`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to reopen reflection");
+}

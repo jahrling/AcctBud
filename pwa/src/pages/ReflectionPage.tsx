@@ -5,6 +5,7 @@ import {
   getReflection,
   streamReflectionChat,
   finishReflection,
+  reopenReflection,
 } from "../api";
 
 function ReflectionPage() {
@@ -142,11 +143,36 @@ function ReflectionPage() {
             borderRadius: "var(--radius)",
             padding: "0.75rem 1rem",
             marginBottom: "1rem",
-            color: "var(--success)",
-            fontSize: "0.9rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "0.75rem",
           }}
         >
-          Reflection saved to journal.
+          <span style={{ color: "var(--success)", fontSize: "0.9rem" }}>
+            Reflection saved to journal.
+          </span>
+          <button
+            onClick={async () => {
+              try {
+                await reopenReflection(id);
+                setFinished(false);
+              } catch {
+                setError("Failed to reopen reflection");
+              }
+            }}
+            style={{
+              padding: "4px 12px",
+              borderRadius: "6px",
+              background: "var(--accent)",
+              color: "var(--text)",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              flexShrink: 0,
+            }}
+          >
+            Continue
+          </button>
         </div>
       )}
 

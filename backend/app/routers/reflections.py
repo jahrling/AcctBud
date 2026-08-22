@@ -81,6 +81,19 @@ def chat(checkin_id: int, body: ReflectionChatRequest, db: Session = Depends(get
     return StreamingResponse(generate(), media_type="text/event-stream")
 
 
+@router.post("/{checkin_id}/reopen")
+def reopen(checkin_id: int, db: Session = Depends(get_db)):
+    check_in = db.query(CheckIn).filter(CheckIn.id == checkin_id).first()
+    if not check_in:
+        raise HTTPException(status_code=404, detail="Check-in not found")
+    if not check_in.reflection_finished:
+        raise HTTPException(status_code=409, detail="Reflection is not finished")
+
+    check_in.reflection_finished = False
+    db.commit()
+    return {"reopened": True}
+
+
 @router.post("/{checkin_id}/finish", response_model=ReflectionFinishResponse)
 def finish(checkin_id: int, db: Session = Depends(get_db)):
     check_in = db.query(CheckIn).filter(CheckIn.id == checkin_id).first()
