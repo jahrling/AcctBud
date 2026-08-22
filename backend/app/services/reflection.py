@@ -1,11 +1,17 @@
 from sqlalchemy.orm import Session
 
-from app.models import CheckIn, ReflectionMessage
+from app.models import CheckIn, ReflectionMessage, Task
 
 
-def build_system_prompt(check_in: CheckIn) -> str:
+def build_system_prompt(check_in: CheckIn, db: Session) -> str:
     done = [i for i in check_in.items if i.done]
     not_done = [i for i in check_in.items if not i.done]
+
+    task_ids = [i.task_id for i in check_in.items]
+    tasks_by_id = {}
+    if task_ids:
+        tasks = db.query(Task).filter(Task.id.in_(task_ids)).all()
+        tasks_by_id = {t.id: t for t in tasks}
 
     lines = [
         "You are AcctBud, a personal accountability companion.",
@@ -22,14 +28,21 @@ def build_system_prompt(check_in: CheckIn) -> str:
         "",
     ]
 
+    def _format_item(item):
+        line = f"  - [{item.task_category}] {item.task_title}"
+        task = tasks_by_id.get(item.task_id)
+        if task and task.note:
+            line += f" — {task.note}"
+        return line
+
     if done:
         lines.append(f"Completed tasks ({len(done)}):")
         for item in done:
-            lines.append(f"  - [{item.task_category}] {item.task_title}")
+            lines.append(_format_item(item))
     if not_done:
         lines.append(f"Not completed ({len(not_done)}):")
         for item in not_done:
-            lines.append(f"  - [{item.task_category}] {item.task_title}")
+            lines.append(_format_item(item))
     if not done and not not_done:
         lines.append("No tasks were active today.")
 
@@ -63,7 +76,7 @@ def get_or_create_system_message(
     msg = ReflectionMessage(
         check_in_id=check_in.id,
         role="system",
-        content=build_system_prompt(check_in),
+        content=build_system_prompt(check_in, db),
     )
     db.add(msg)
     db.commit()

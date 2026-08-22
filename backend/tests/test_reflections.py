@@ -53,24 +53,31 @@ def _mock_stream(*args, **kwargs):
 class TestSystemPrompt:
     def test_includes_done_tasks(self, db_session):
         ci, tasks = _seed_completed_checkin(db_session)
-        prompt = build_system_prompt(ci)
+        prompt = build_system_prompt(ci, db_session)
         assert "Task 1" in prompt
         assert "Completed tasks" in prompt
 
     def test_includes_not_done_tasks(self, db_session):
         ci, tasks = _seed_completed_checkin(db_session, done_ids=set())
-        prompt = build_system_prompt(ci)
+        prompt = build_system_prompt(ci, db_session)
         assert "Not completed" in prompt
 
     def test_includes_note(self, db_session):
         ci, _ = _seed_completed_checkin(db_session, note="Rough day")
-        prompt = build_system_prompt(ci)
+        prompt = build_system_prompt(ci, db_session)
         assert "Rough day" in prompt
 
     def test_no_tasks(self, db_session):
         ci, _ = _seed_completed_checkin(db_session, task_count=0)
-        prompt = build_system_prompt(ci)
+        prompt = build_system_prompt(ci, db_session)
         assert "No tasks were active" in prompt
+
+    def test_includes_task_notes(self, db_session):
+        ci, tasks = _seed_completed_checkin(db_session)
+        tasks[0].note = "Morning standup and code review"
+        db_session.commit()
+        prompt = build_system_prompt(ci, db_session)
+        assert "Morning standup and code review" in prompt
 
 
 class TestGetReflection:
