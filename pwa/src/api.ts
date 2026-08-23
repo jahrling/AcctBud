@@ -126,6 +126,7 @@ export async function completeCheckIn(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ done_task_ids: doneTaskIds, note: note ?? null }),
+    keepalive: true,
   });
   if (!res.ok) throw new Error("Failed to complete check-in");
   return res.json();
