@@ -49,6 +49,12 @@ def complete_checkin(
     done_set = set(done_task_ids)
     for item in check_in.items:
         item.done = item.task_id in done_set
+        task = db.query(Task).filter(Task.id == item.task_id).first()
+        if task:
+            if item.done and task.status == "active":
+                task.status = "completed"
+            elif not item.done and task.status == "completed":
+                task.status = "active"
     check_in.note = note
     check_in.completed_at = datetime.now(timezone.utc)
     check_in.status = "completed"

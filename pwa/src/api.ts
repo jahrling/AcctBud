@@ -44,7 +44,7 @@ export interface Task {
   title: string;
   note: string | null;
   category: "work" | "personal";
-  status: "active" | "paused" | "archived";
+  status: "active" | "paused" | "archived" | "completed";
   sort_order: number;
   created_at: string;
   updated_at: string;

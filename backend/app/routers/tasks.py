@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
 @router.get("", response_model=TaskListResponse)
-def list_tasks(status: Literal["active", "paused", "archived", "all"] = "active", db: Session = Depends(get_db)):
+def list_tasks(status: Literal["active", "paused", "archived", "completed", "all"] = "active", db: Session = Depends(get_db)):
     query = db.query(Task)
     if status != "all":
         query = query.filter(Task.status == status)

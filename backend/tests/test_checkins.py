@@ -129,6 +129,50 @@ class TestCompleteCheckIn:
         assert done_ids == {tasks[1].id, tasks[2].id}
         assert data["note"] == "Updated"
 
+    def test_done_tasks_marked_completed(self, client, db_session):
+        tasks = _seed_tasks(db_session, 3)
+        checkin = client.get("/api/checkins/today").json()
+
+        client.post(
+            f"/api/checkins/{checkin['id']}/complete",
+            json={"done_task_ids": [tasks[0].id, tasks[2].id]},
+        )
+        for t in tasks:
+            db_session.refresh(t)
+        assert tasks[0].status == "completed"
+        assert tasks[1].status == "active"
+        assert tasks[2].status == "completed"
+
+    def test_unchecked_tasks_reverted_on_resubmit(self, client, db_session):
+        tasks = _seed_tasks(db_session, 2)
+        checkin = client.get("/api/checkins/today").json()
+
+        client.post(
+            f"/api/checkins/{checkin['id']}/complete",
+            json={"done_task_ids": [tasks[0].id, tasks[1].id]},
+        )
+        client.post(
+            f"/api/checkins/{checkin['id']}/complete",
+            json={"done_task_ids": [tasks[1].id]},
+        )
+        for t in tasks:
+            db_session.refresh(t)
+        assert tasks[0].status == "active"
+        assert tasks[1].status == "completed"
+
+    def test_paused_task_not_changed_by_checkin(self, client, db_session):
+        tasks = _seed_tasks(db_session, 2)
+        checkin = client.get("/api/checkins/today").json()
+        tasks[0].status = "paused"
+        db_session.commit()
+
+        client.post(
+            f"/api/checkins/{checkin['id']}/complete",
+            json={"done_task_ids": [tasks[0].id]},
+        )
+        db_session.refresh(tasks[0])
+        assert tasks[0].status == "paused"
+
     def test_complete_not_found(self, client):
         res = client.post("/api/checkins/999/complete", json={"done_task_ids": []})
         assert res.status_code == 404

@@ -39,7 +39,7 @@ class TaskUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=120)
     note: str | None = None
     category: Literal["work", "personal"] | None = None
-    status: Literal["active", "paused", "archived"] | None = None
+    status: Literal["active", "paused", "archived", "completed"] | None = None
     sort_order: float | None = None
 
 

@@ -160,7 +160,7 @@ function TasksPage() {
       </form>
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem", alignItems: "center" }}>
-        {(["active", "paused", "archived", "all"] as const).map((f) => (
+        {(["active", "completed", "paused", "archived", "all"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -364,7 +364,10 @@ function TaskGroup({
                         {task.status === "paused" && (
                           <ActionBtn label="▶" onClick={() => onStatusChange(task, "active")} />
                         )}
-                        {task.status !== "archived" && (
+                        {task.status === "completed" && (
+                          <ActionBtn label="↩" onClick={() => onStatusChange(task, "active")} />
+                        )}
+                        {(task.status === "active" || task.status === "paused") && (
                           <ActionBtn label="✕" onClick={() => onStatusChange(task, "archived")} />
                         )}
                         {task.status === "archived" && (

@@ -174,6 +174,10 @@ function App() {
             )}
           </div>
         )}
+
+        <p style={{ marginTop: "0.75rem", fontSize: "0.75rem" }}>
+          v{__APP_VERSION__}
+        </p>
       </footer>
     </div>
   );

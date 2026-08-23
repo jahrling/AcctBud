@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { type CheckIn, getTodayCheckIn, completeCheckIn } from "../api";
+import { type CheckIn, getTodayCheckIn, completeCheckIn, getHealth } from "../api";
 
 function CheckInPage() {
   const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
@@ -9,9 +9,11 @@ function CheckInPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userTz, setUserTz] = useState<string>("UTC");
 
   const load = useCallback(async () => {
     try {
+      getHealth().then((h) => setUserTz(h.timezone)).catch(() => {});
       const data = await getTodayCheckIn();
       setCheckIn(data);
       if (data.status === "completed") {
@@ -52,6 +54,8 @@ function CheckInPage() {
       const time = new Date(result.completed_at!).toLocaleTimeString([], {
         hour: "numeric",
         minute: "2-digit",
+        timeZone: userTz,
+        timeZoneName: "short",
       });
       setConfirmation(`Recorded ${doneCount} of ${total}, ${time}`);
     } catch {
