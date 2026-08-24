@@ -128,3 +128,77 @@ class TestReflectionPromptQuality:
             word in response.lower()
             for word in ["incident", "production", "pulled"]
         ), f"Expected model to reference the user's note. Got: {response}"
+
+
+class TestPlanningPromptQuality:
+    """
+    Smoke tests for planning suggestion quality.
+
+    Same approach as reflection tests: hit real Ollama, check that
+    the response is in the right ballpark.
+    """
+
+    def _planning_response(self, system_prompt: str) -> str:
+        messages = [{"role": "system", "content": system_prompt}]
+        with patch("app.config.settings.ollama_base_url", OLLAMA_URL):
+            tokens = list(stream_chat(messages, max_tokens=256, temperature=0.3))
+        return "".join(tokens)
+
+    def test_suggests_from_active_tasks(self):
+        from app.services.planning import build_planning_prompt
+
+        class FakeTask:
+            def __init__(self, title, category, note=None):
+                self.title = title
+                self.category = category
+                self.note = note
+
+        tasks = [
+            FakeTask("Review PR #42", "work"),
+            FakeTask("Ship onboarding flow", "work"),
+            FakeTask("Run 5K", "personal"),
+        ]
+        prompt = build_planning_prompt(tasks, None, None)
+        response = self._planning_response(prompt)
+
+        mentioned = sum(
+            1 for name in ["pr", "42", "onboarding", "5k", "run"]
+            if name in response.lower()
+        )
+        assert mentioned >= 1, (
+            f"Expected suggestion to reference at least one task name. Got: {response}"
+        )
+
+    def test_references_yesterday_outcomes(self):
+        from app.services.planning import build_planning_prompt
+
+        class FakeTask:
+            def __init__(self, title, category, note=None):
+                self.title = title
+                self.category = category
+                self.note = note
+
+        class FakeItem:
+            def __init__(self, title, category, done):
+                self.task_title = title
+                self.task_category = category
+                self.done = done
+
+        class FakeCheckIn:
+            items = [
+                FakeItem("Ship login page", "work", True),
+                FakeItem("Run 3 miles", "personal", False),
+            ]
+
+        tasks = [
+            FakeTask("Ship login page", "work"),
+            FakeTask("Review PR #42", "work"),
+            FakeTask("Run 3 miles", "personal"),
+        ]
+        prompt = build_planning_prompt(tasks, FakeCheckIn(), None)
+        response = self._planning_response(prompt)
+
+        assert any(
+            word in response.lower()
+            for word in ["login", "shipped", "completed", "finished", "done", "yesterday"]
+        ), f"Expected suggestion to acknowledge yesterday's results. Got: {response}"
