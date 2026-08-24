@@ -137,6 +137,14 @@ function PlanPage() {
     return (
       <div style={{ padding: "1.5rem", maxWidth: "480px", margin: "0 auto" }}>
         <p style={{ color: "var(--accent-bright)" }}>{error}</p>
+        <button
+          className="btn-primary"
+          onClick={() => { setError(null); suggestFired.current = false; load(); }}
+          style={{ marginTop: "0.75rem", marginBottom: "0.75rem" }}
+        >
+          Retry
+        </button>
+        <br />
         <Link to="/" style={{ color: "var(--text-muted)" }}>&larr; Home</Link>
       </div>
     );
