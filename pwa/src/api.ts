@@ -247,3 +247,106 @@ export async function reopenReflection(
   });
   if (!res.ok) throw new Error("Failed to reopen reflection");
 }
+
+// Plans
+
+export interface PlanItem {
+  id: number;
+  task_id: number;
+  task_title: string;
+  task_category: string;
+  is_key: boolean;
+}
+
+export interface Plan {
+  id: number;
+  for_date: string;
+  status: "draft" | "confirmed" | "skipped";
+  created_at: string;
+  confirmed_at: string | null;
+  llm_suggestion: string | null;
+  items: PlanItem[];
+}
+
+export interface PlanTodayResponse {
+  plan: Plan;
+  active_tasks: Task[];
+}
+
+export async function getTodayPlan(): Promise<PlanTodayResponse> {
+  const res = await fetch(`${BASE}/api/plans/today`);
+  if (!res.ok) throw new Error("Failed to fetch today's plan");
+  return res.json();
+}
+
+export async function streamPlanSuggestion(
+  planId: number,
+  onToken: (token: string) => void,
+  onDone: (suggestion: string) => void,
+  onError: (error: string) => void,
+): Promise<void> {
+  const res = await fetch(`${BASE}/api/plans/${planId}/suggest`, {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    onError("Failed to get suggestion");
+    return;
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    const data = await res.json();
+    onDone(data.suggestion);
+    return;
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop()!;
+
+    for (const block of parts) {
+      const eventMatch = block.match(/^event: (\w+)/m);
+      const dataMatch = block.match(/^data: (.+)$/m);
+      if (!eventMatch || !dataMatch) continue;
+
+      const eventType = eventMatch[1];
+      const data = JSON.parse(dataMatch[1]);
+
+      if (eventType === "token") {
+        onToken(data.content);
+      } else if (eventType === "done") {
+        onDone(data.suggestion);
+        return;
+      } else if (eventType === "error") {
+        onError(data.detail || "LLM error");
+        return;
+      }
+    }
+  }
+  onDone("");
+}
+
+export async function confirmPlan(
+  planId: number,
+  items: { task_id: number; is_key: boolean }[],
+): Promise<Plan> {
+  const res = await fetch(`${BASE}/api/plans/${planId}/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Failed to confirm plan" }));
+    throw new Error(err.detail || "Failed to confirm plan");
+  }
+  return res.json();
+}

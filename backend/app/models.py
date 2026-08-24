@@ -89,6 +89,35 @@ class ReflectionMessage(Base):
     check_in: Mapped["CheckIn"] = relationship(back_populates="reflection_messages")
 
 
+class DailyPlan(Base):
+    __tablename__ = "daily_plan"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    for_date: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    status: Mapped[str] = mapped_column(String, default="draft", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    journal_written: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    llm_suggestion: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    items: Mapped[list["DailyPlanItem"]] = relationship(
+        back_populates="plan", cascade="all, delete-orphan"
+    )
+
+
+class DailyPlanItem(Base):
+    __tablename__ = "daily_plan_item"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    plan_id: Mapped[int] = mapped_column(Integer, ForeignKey("daily_plan.id"), nullable=False)
+    task_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    task_title: Mapped[str] = mapped_column(String, nullable=False)
+    task_category: Mapped[str] = mapped_column(String, nullable=False)
+    is_key: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    plan: Mapped["DailyPlan"] = relationship(back_populates="items")
+
+
 class NotificationLog(Base):
     __tablename__ = "notification_log"
 

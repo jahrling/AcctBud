@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePush } from "./usePush";
-import { getHealth, getTasks, getTodayCheckIn, type CheckIn } from "./api";
+import { getHealth, getTasks, getTodayCheckIn, getTodayPlan, type CheckIn, type Plan } from "./api";
 
 function App() {
   const { state, subscribe, unsubscribe } = usePush();
   const [health, setHealth] = useState<{ version: string; server_time: string; timezone: string } | null>(null);
   const [activeCount, setActiveCount] = useState<number | null>(null);
   const [todayCheckIn, setTodayCheckIn] = useState<CheckIn | null>(null);
+  const [todayPlan, setTodayPlan] = useState<Plan | null>(null);
   const [showPushSetup, setShowPushSetup] = useState(false);
 
   useEffect(() => {
     getHealth().then(setHealth).catch(() => {});
     getTasks("active").then((r) => setActiveCount(r.active_count)).catch(() => {});
     getTodayCheckIn().then(setTodayCheckIn).catch(() => {});
+    getTodayPlan().then((r) => setTodayPlan(r.plan)).catch(() => {});
   }, []);
 
   const pushLabel =
@@ -58,6 +60,44 @@ function App() {
               </>
             ) : (
               <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>Tasks</div>
+            )}
+          </div>
+          <span style={{ color: "var(--text-muted)", fontSize: "1.25rem" }}>&rarr;</span>
+        </section>
+      </Link>
+
+      <Link to="/plan/today" style={{ textDecoration: "none" }}>
+        <section
+          style={{
+            background: "var(--bg-card)",
+            borderRadius: "var(--radius)",
+            padding: "1.25rem",
+            marginBottom: "1rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            {todayPlan ? (
+              todayPlan.status === "confirmed" ? (
+                <>
+                  <div style={{ fontSize: "0.95rem", color: "var(--success)" }}>
+                    Today's plan
+                  </div>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                    {todayPlan.items.length} focus item{todayPlan.items.length !== 1 ? "s" : ""}
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>
+                  Plan your day
+                </div>
+              )
+            ) : (
+              <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>
+                Plan your day
+              </div>
             )}
           </div>
           <span style={{ color: "var(--text-muted)", fontSize: "1.25rem" }}>&rarr;</span>
@@ -122,22 +162,6 @@ function App() {
         </section>
       </Link>
 
-      {health && (
-        <section
-          style={{
-            background: "var(--bg-card)",
-            borderRadius: "var(--radius)",
-            padding: "1.25rem",
-            fontSize: "0.85rem",
-            color: "var(--text-muted)",
-            marginBottom: "1rem",
-          }}
-        >
-          <p>Server v{health.version}</p>
-          <p>{health.timezone} &mdash; {new Date(health.server_time).toLocaleString()}</p>
-        </section>
-      )}
-
       <footer
         style={{
           textAlign: "center",
@@ -176,7 +200,7 @@ function App() {
         )}
 
         <p style={{ marginTop: "0.75rem", fontSize: "0.75rem" }}>
-          v{__APP_VERSION__}
+          v{__APP_VERSION__}{health ? ` · ${health.timezone}` : ""}
         </p>
       </footer>
     </div>

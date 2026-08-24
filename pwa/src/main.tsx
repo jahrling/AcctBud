@@ -5,6 +5,7 @@ import App from "./App";
 import TasksPage from "./pages/TasksPage";
 import CheckInPage from "./pages/CheckInPage";
 import HistoryPage from "./pages/HistoryPage";
+import PlanPage from "./pages/PlanPage";
 import ReflectionPage from "./pages/ReflectionPage";
 import { UpdateBanner } from "./UpdateBanner";
 import "./index.css";
@@ -42,6 +43,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <UpdateBanner />
         <Routes>
           <Route path="/" element={<App />} />
+          <Route path="/plan/today" element={<PlanPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/checkin/today" element={<CheckInPage />} />
           <Route path="/history" element={<HistoryPage />} />

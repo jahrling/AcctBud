@@ -132,3 +132,42 @@ class ReflectionChatRequest(BaseModel):
 
 class ReflectionFinishResponse(BaseModel):
     journal_written: bool
+
+
+# Plans
+
+
+class PlanItemResponse(BaseModel):
+    id: int
+    task_id: int
+    task_title: str
+    task_category: str
+    is_key: bool
+
+    model_config = {"from_attributes": True}
+
+
+class PlanResponse(BaseModel):
+    id: int
+    for_date: str
+    status: str
+    created_at: datetime
+    confirmed_at: datetime | None
+    llm_suggestion: str | None
+    items: list[PlanItemResponse]
+
+    model_config = {"from_attributes": True}
+
+
+class PlanTodayResponse(BaseModel):
+    plan: PlanResponse
+    active_tasks: list["TaskResponse"]
+
+
+class PlanConfirmItem(BaseModel):
+    task_id: int
+    is_key: bool = False
+
+
+class PlanConfirmRequest(BaseModel):
+    items: list[PlanConfirmItem] = Field(min_length=1, max_length=5)

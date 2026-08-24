@@ -6,7 +6,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import CheckIn
+from app.models import CheckIn, DailyPlan
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +142,87 @@ def write_reflection_entry(check_in: CheckIn, messages: list) -> bool:
             e,
         )
         return False
+
+
+def _render_plan_entry(plan: DailyPlan) -> str:
+    confirmed = plan.confirmed_at or datetime.now(timezone.utc)
+    utc_str = confirmed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    lines = [
+        "---",
+        f"date: {utc_str}",
+        "type: plan",
+        f"plan_id: {plan.id}",
+        f"for_date: {plan.for_date}",
+        "---",
+        "",
+        "# Morning plan",
+        "",
+        "## Focus items",
+        "",
+    ]
+
+    for item in plan.items:
+        key_marker = " (key)" if item.is_key else ""
+        lines.append(f"- [{item.task_category}] {item.task_title}{key_marker}")
+
+    lines.append("")
+
+    if plan.llm_suggestion:
+        lines.append("## AcctBud's suggestion")
+        lines.append("")
+        for suggestion_line in plan.llm_suggestion.strip().splitlines():
+            lines.append(f"> {suggestion_line}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def write_plan_entry(plan: DailyPlan) -> bool:
+    journal_dir = _journal_dir()
+    if journal_dir is None:
+        return False
+
+    if not _DATE_RE.fullmatch(plan.for_date):
+        logger.error("Invalid for_date format: %s", plan.for_date)
+        return False
+
+    year, month, day = plan.for_date.split("-")
+    target_dir = journal_dir / year / month
+    target_file = target_dir / f"{day}-plan.md"
+
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_file.write_text(_render_plan_entry(plan), encoding="utf-8")
+        return True
+    except OSError as e:
+        logger.warning(
+            "Could not write plan entry for %s — Vault may be locked: %s",
+            plan.for_date,
+            e,
+        )
+        return False
+
+
+def retry_pending_plan_entries(db: Session) -> int:
+    pending = (
+        db.query(DailyPlan)
+        .filter(DailyPlan.status == "confirmed", DailyPlan.journal_written.is_(False))
+        .all()
+    )
+    if not pending:
+        return 0
+
+    written = 0
+    for plan in pending:
+        if write_plan_entry(plan):
+            plan.journal_written = True
+            written += 1
+
+    if written:
+        db.commit()
+        logger.info("Retried %d pending plan entries, wrote %d", len(pending), written)
+    return written
 
 
 def retry_pending_entries(db: Session) -> int:

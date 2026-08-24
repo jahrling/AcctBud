@@ -8,9 +8,9 @@ from pytz import timezone as pytz_timezone
 
 from app.config import settings
 from app.database import SessionLocal
-from app.models import CheckIn, Task
+from app.models import CheckIn, DailyPlan, Task
 from app.services.checkins import get_or_create_checkin, today_str
-from app.services.journal import retry_pending_entries, retry_pending_reflections
+from app.services.journal import retry_pending_entries, retry_pending_plan_entries, retry_pending_reflections
 from app.services.push import send_to_all
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ NOTIFICATION_CONTENT = {
     "morning": {
         "title": "Good morning",
         "body": "Time to plan the day.",
-        "url": "/acctbud/",
+        "url": "/acctbud/plan/today",
     },
     "evening": {
         "title": "Evening check-in",
@@ -112,7 +112,19 @@ def rollover_missed() -> None:
             check_in.status = "missed"
             logger.info("Marked check-in for %s as missed", check_in.for_date)
 
-        if missed:
+        stale_plans = (
+            db.query(DailyPlan)
+            .filter(
+                DailyPlan.status == "draft",
+                DailyPlan.for_date < current_date,
+            )
+            .all()
+        )
+        for plan in stale_plans:
+            plan.status = "skipped"
+            logger.info("Marked plan for %s as skipped", plan.for_date)
+
+        if missed or stale_plans:
             db.commit()
     finally:
         db.close()
@@ -123,6 +135,7 @@ def retry_journals() -> None:
     try:
         retry_pending_entries(db)
         retry_pending_reflections(db)
+        retry_pending_plan_entries(db)
     finally:
         db.close()
 

@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
-from app.models import CheckIn, CheckInItem, Task
+from app.models import CheckIn, CheckInItem, DailyPlan, Task
 
 
 def today_str(tz_name: str) -> str:
@@ -15,25 +15,40 @@ def get_or_create_checkin(db: Session, for_date: str) -> CheckIn:
     if existing:
         return existing
 
-    active_tasks = (
-        db.query(Task)
-        .filter(Task.status == "active")
-        .order_by(Task.sort_order, Task.created_at)
-        .all()
-    )
-
     check_in = CheckIn(for_date=for_date)
     db.add(check_in)
     db.flush()
 
-    for task in active_tasks:
-        item = CheckInItem(
-            check_in_id=check_in.id,
-            task_id=task.id,
-            task_title=task.title,
-            task_category=task.category,
+    confirmed_plan = (
+        db.query(DailyPlan)
+        .filter(DailyPlan.for_date == for_date, DailyPlan.status == "confirmed")
+        .first()
+    )
+
+    if confirmed_plan and confirmed_plan.items:
+        for pi in confirmed_plan.items:
+            item = CheckInItem(
+                check_in_id=check_in.id,
+                task_id=pi.task_id,
+                task_title=pi.task_title,
+                task_category=pi.task_category,
+            )
+            db.add(item)
+    else:
+        active_tasks = (
+            db.query(Task)
+            .filter(Task.status == "active")
+            .order_by(Task.sort_order, Task.created_at)
+            .all()
         )
-        db.add(item)
+        for task in active_tasks:
+            item = CheckInItem(
+                check_in_id=check_in.id,
+                task_id=task.id,
+                task_title=task.title,
+                task_category=task.category,
+            )
+            db.add(item)
 
     db.commit()
     db.refresh(check_in)

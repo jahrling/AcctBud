@@ -22,7 +22,7 @@ def test_send_scheduled_notification_morning(mock_session_cls, mock_send_to_all)
         mock_db,
         title="Good morning",
         body="Time to plan the day.",
-        url="/acctbud/",
+        url="/acctbud/plan/today",
         kind="morning",
     )
     mock_db.close.assert_called_once()
