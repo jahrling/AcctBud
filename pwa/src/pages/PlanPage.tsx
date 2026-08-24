@@ -112,8 +112,18 @@ function PlanPage() {
   const handleConfirm = async () => {
     if (!plan) return;
 
-    if (!keyItems.work || !keyItems.personal) {
-      setValidationError("Pick at least 1 key work item and 1 key personal item.");
+    const hasWork = activeTasks.some((t) => t.category === "work" && selected.has(t.id));
+    const hasPersonal = activeTasks.some((t) => t.category === "personal" && selected.has(t.id));
+    if (hasWork && !keyItems.work) {
+      setValidationError("Pick at least 1 key work item.");
+      return;
+    }
+    if (hasPersonal && !keyItems.personal) {
+      setValidationError("Pick at least 1 key personal item.");
+      return;
+    }
+    if (!keyItems.work && !keyItems.personal) {
+      setValidationError("Pick at least 1 key item.");
       return;
     }
 

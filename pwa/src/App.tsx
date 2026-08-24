@@ -83,21 +83,31 @@ function App() {
               todayPlan.status === "confirmed" ? (
                 <>
                   <div style={{ fontSize: "0.95rem", color: "var(--success)" }}>
-                    Today's plan
+                    Morning plan set
                   </div>
                   <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
                     {todayPlan.items.length} focus item{todayPlan.items.length !== 1 ? "s" : ""}
                   </div>
                 </>
               ) : (
-                <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>
-                  Plan your day
-                </div>
+                <>
+                  <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>
+                    Morning plan
+                  </div>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                    Pick today's focus items
+                  </div>
+                </>
               )
             ) : (
-              <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>
-                Plan your day
-              </div>
+              <>
+                <div style={{ fontSize: "0.95rem", color: "var(--text)" }}>
+                  Morning plan
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                  Pick today's focus items
+                </div>
+              </>
             )}
           </div>
           <span style={{ color: "var(--text-muted)", fontSize: "1.25rem" }}>&rarr;</span>
@@ -121,7 +131,7 @@ function App() {
               {todayCheckIn.status === "completed" ? (
                 <>
                   <div style={{ fontSize: "0.95rem", color: "var(--success)" }}>
-                    Check-in complete
+                    Evening check-in done
                   </div>
                   <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
                     {todayCheckIn.items.filter((i) => i.done).length} of{" "}

@@ -125,6 +125,37 @@ class TestConfirmPlan:
         assert res.status_code == 200
         assert len(res.json()["items"]) == 3
 
+    def test_confirm_single_category_ok(self, client, db_session):
+        tasks = _seed_tasks(db_session, work=0, personal=3)
+        plan = client.get("/api/plans/today").json()["plan"]
+
+        res = client.post(
+            f"/api/plans/{plan['id']}/confirm",
+            json={
+                "items": [
+                    {"task_id": tasks[0].id, "is_key": True},
+                    {"task_id": tasks[1].id, "is_key": False},
+                ]
+            },
+        )
+        assert res.status_code == 200
+        assert res.json()["status"] == "confirmed"
+
+    def test_confirm_single_category_still_needs_key(self, client, db_session):
+        tasks = _seed_tasks(db_session, work=0, personal=3)
+        plan = client.get("/api/plans/today").json()["plan"]
+
+        res = client.post(
+            f"/api/plans/{plan['id']}/confirm",
+            json={
+                "items": [
+                    {"task_id": tasks[0].id, "is_key": False},
+                ]
+            },
+        )
+        assert res.status_code == 422
+        assert "key" in res.json()["detail"].lower()
+
     def test_confirm_rejects_nonexistent_task(self, client, db_session):
         _seed_tasks(db_session)
         plan = client.get("/api/plans/today").json()["plan"]

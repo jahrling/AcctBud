@@ -96,6 +96,7 @@ def confirm(plan_id: int, body: PlanConfirmRequest, db: Session = Depends(get_db
     tasks = db.query(Task).filter(Task.id.in_(task_ids)).all()
     tasks_by_id = {t.id: t for t in tasks}
 
+    categories_present: set[str] = set()
     work_keys = 0
     personal_keys = 0
     for item in body.items:
@@ -104,16 +105,27 @@ def confirm(plan_id: int, body: PlanConfirmRequest, db: Session = Depends(get_db
             raise HTTPException(
                 status_code=422, detail=f"Task {item.task_id} not found"
             )
+        categories_present.add(task.category)
         if item.is_key:
             if task.category == "work":
                 work_keys += 1
             elif task.category == "personal":
                 personal_keys += 1
 
-    if work_keys < 1 or personal_keys < 1:
+    if "work" in categories_present and work_keys < 1:
         raise HTTPException(
             status_code=422,
-            detail="At least 1 key work item and 1 key personal item required",
+            detail="Pick at least 1 key work item",
+        )
+    if "personal" in categories_present and personal_keys < 1:
+        raise HTTPException(
+            status_code=422,
+            detail="Pick at least 1 key personal item",
+        )
+    if work_keys + personal_keys < 1:
+        raise HTTPException(
+            status_code=422,
+            detail="Pick at least 1 key item",
         )
 
     items_dicts = [{"task_id": i.task_id, "is_key": i.is_key} for i in body.items]
