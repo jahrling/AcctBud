@@ -22,6 +22,7 @@ function ReflectionPage() {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -90,6 +91,7 @@ function ReflectionPage() {
       { id: Date.now(), role: "user", content: text, created_at: new Date().toISOString() },
     ]);
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     sendMessage(text);
   };
 
@@ -256,13 +258,25 @@ function ReflectionPage() {
       {!finished && (
         <div>
           <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-            <input
-              type="text"
+            <textarea
+              ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+              }}
+              onKeyDown={(e) => {
+                // Enter sends on desktop; on touch devices it inserts a newline.
+                const touch = window.matchMedia("(pointer: coarse)").matches;
+                if (e.key === "Enter" && !e.shiftKey && !touch && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder="Reply..."
-              disabled={streaming}
+              readOnly={streaming}
+              rows={2}
               style={{
                 flex: 1,
                 padding: "10px 14px",
@@ -270,7 +284,12 @@ function ReflectionPage() {
                 border: "1px solid var(--accent)",
                 background: "var(--bg-card)",
                 color: "var(--text)",
-                fontSize: "0.9rem",
+                fontSize: "16px",
+                fontFamily: "inherit",
+                resize: "none",
+                overflowY: "auto",
+                whiteSpace: "pre-wrap",
+                overflowWrap: "anywhere",
               }}
             />
             <button
