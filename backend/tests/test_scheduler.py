@@ -46,9 +46,10 @@ def test_notification_content_keys():
         assert "url" in content
 
 
+@patch("app.services.scheduler.run_backfill_summaries")
 @patch("app.services.scheduler.retry_journals")
 @patch("app.services.scheduler.scheduler")
-def test_start_scheduler_adds_jobs(mock_scheduler, mock_retry):
+def test_start_scheduler_adds_jobs(mock_scheduler, mock_retry, mock_backfill):
     from app.services.scheduler import start_scheduler
 
     with patch("app.services.scheduler.settings") as mock_settings:
@@ -57,7 +58,7 @@ def test_start_scheduler_adds_jobs(mock_scheduler, mock_retry):
         mock_settings.evening_time = "20:00"
         start_scheduler()
 
-    assert mock_scheduler.add_job.call_count == 5
+    assert mock_scheduler.add_job.call_count == 6
     mock_scheduler.start.assert_called_once()
 
     job_ids = [call.kwargs["id"] for call in mock_scheduler.add_job.call_args_list]
@@ -66,3 +67,4 @@ def test_start_scheduler_adds_jobs(mock_scheduler, mock_retry):
     assert "followup_nag" in job_ids
     assert "rollover_missed" in job_ids
     assert "retry_journals" in job_ids
+    assert "nightly_summary" in job_ids
