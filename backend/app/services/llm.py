@@ -84,3 +84,55 @@ def stream_chat(
 
     if buffer and not in_think:
         yield buffer
+
+
+def complete(
+    messages: list[dict[str, str]],
+    *,
+    model: str | None = None,
+    max_tokens: int | None = None,
+    temperature: float = 0.7,
+) -> str:
+    url = f"{settings.ollama_base_url}/api/chat"
+    payload = {
+        "model": model or settings.ollama_model,
+        "messages": messages,
+        "stream": False,
+        "think": False,
+        "options": {
+            "temperature": temperature,
+            "num_predict": max_tokens or settings.ollama_max_tokens,
+        },
+    }
+
+    with httpx.Client(timeout=120.0) as client:
+        response = client.post(url, json=payload)
+        if response.status_code == 404:
+            raise ValueError(f"Model '{payload['model']}' not found in Ollama")
+        response.raise_for_status()
+
+    data = response.json()
+    content = data.get("message", {}).get("content", "")
+
+    # Strip think tags if present
+    result = []
+    in_think = False
+    remaining = content
+    while remaining:
+        if in_think:
+            end = remaining.find(THINK_CLOSE)
+            if end == -1:
+                break
+            in_think = False
+            remaining = remaining[end + len(THINK_CLOSE):]
+        else:
+            start = remaining.find(THINK_OPEN)
+            if start == -1:
+                result.append(remaining)
+                break
+            if start > 0:
+                result.append(remaining[:start])
+            in_think = True
+            remaining = remaining[start + len(THINK_OPEN):]
+
+    return "".join(result).strip()

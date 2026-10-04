@@ -57,7 +57,8 @@ def suggest(plan_id: int, db: Session = Depends(get_db)):
         reflection_summary = get_yesterday_reflection_summary(db, yesterday)
 
     system_prompt = build_planning_prompt(
-        active_tasks, yesterday, reflection_summary
+        active_tasks, yesterday, reflection_summary,
+        db=db, for_date=plan.for_date,
     )
     messages = [{"role": "system", "content": system_prompt}]
 

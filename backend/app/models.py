@@ -118,6 +118,16 @@ class DailyPlanItem(Base):
     plan: Mapped["DailyPlan"] = relationship(back_populates="items")
 
 
+class DailySummary(Base):
+    __tablename__ = "daily_summary"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    for_date: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    summary_text: Mapped[str] = mapped_column(Text, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    model_used: Mapped[str] = mapped_column(String, nullable=False)
+
+
 class NotificationLog(Base):
     __tablename__ = "notification_log"
 

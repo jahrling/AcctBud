@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models import CheckIn, ReflectionMessage, Task
+from app.services.summary import format_summaries_for_prompt, get_recent_summaries
 
 
 def build_system_prompt(check_in: CheckIn, db: Session) -> str:
@@ -48,6 +49,12 @@ def build_system_prompt(check_in: CheckIn, db: Session) -> str:
 
     if check_in.note:
         lines.append(f'\nUser\'s note: "{check_in.note}"')
+
+    summaries = get_recent_summaries(db, check_in.for_date)
+    summary_block = format_summaries_for_prompt(summaries)
+    if summary_block:
+        lines.append("")
+        lines.append(summary_block)
 
     lines.extend([
         "",

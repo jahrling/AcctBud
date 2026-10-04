@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models import CheckIn, DailyPlan, DailyPlanItem, Task
+from app.services.summary import format_summaries_for_prompt, get_recent_summaries
 
 
 def today_str(tz_name: str) -> str:
@@ -36,6 +37,8 @@ def build_planning_prompt(
     active_tasks: list[Task],
     yesterday_checkin: CheckIn | None,
     yesterday_reflection_summary: str | None,
+    db: Session | None = None,
+    for_date: str | None = None,
 ) -> str:
     lines = [
         "You are AcctBud, a personal accountability companion.",
@@ -75,6 +78,13 @@ def build_planning_prompt(
             lines.append(line)
     else:
         lines.append("  (none)")
+
+    if db and for_date:
+        summaries = get_recent_summaries(db, for_date)
+        summary_block = format_summaries_for_prompt(summaries)
+        if summary_block:
+            lines.append("")
+            lines.append(summary_block)
 
     lines.extend([
         "",

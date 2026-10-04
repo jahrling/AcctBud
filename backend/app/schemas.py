@@ -171,3 +171,20 @@ class PlanConfirmItem(BaseModel):
 
 class PlanConfirmRequest(BaseModel):
     items: list[PlanConfirmItem] = Field(min_length=1, max_length=5)
+
+
+# Summaries
+
+
+class DailySummaryResponse(BaseModel):
+    id: int
+    for_date: str
+    summary_text: str
+    generated_at: datetime
+    model_used: str
+
+    model_config = {"from_attributes": True}
+
+
+class SummaryListResponse(BaseModel):
+    summaries: list[DailySummaryResponse]

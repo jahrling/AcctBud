@@ -12,6 +12,7 @@ from app.models import CheckIn, DailyPlan, Task
 from app.services.checkins import get_or_create_checkin, today_str
 from app.services.journal import retry_pending_entries, retry_pending_plan_entries, retry_pending_reflections
 from app.services.push import send_to_all
+from app.services.summary import backfill_summaries, generate_summary
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +131,31 @@ def rollover_missed() -> None:
         db.close()
 
 
+def generate_nightly_summary() -> None:
+    db = SessionLocal()
+    try:
+        for_date = today_str(settings.user_tz)
+        result = generate_summary(db, for_date)
+        if result:
+            logger.info("Nightly summary generated for %s", for_date)
+        else:
+            logger.info("No summary to generate for %s (no completed check-in or already exists)", for_date)
+    except Exception:
+        logger.exception("Failed nightly summary generation")
+    finally:
+        db.close()
+
+
+def run_backfill_summaries() -> None:
+    db = SessionLocal()
+    try:
+        backfill_summaries(db)
+    except Exception:
+        logger.exception("Failed summary backfill")
+    finally:
+        db.close()
+
+
 def retry_journals() -> None:
     db = SessionLocal()
     try:
@@ -201,8 +227,15 @@ def start_scheduler() -> None:
         id="retry_journals",
         replace_existing=True,
     )
+    scheduler.add_job(
+        generate_nightly_summary,
+        CronTrigger(hour=0, minute=0, timezone=tz),
+        id="nightly_summary",
+        replace_existing=True,
+    )
 
     retry_journals()
+    run_backfill_summaries()
 
     scheduler.start()
     logger.info(
